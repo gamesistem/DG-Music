@@ -167,21 +167,16 @@
             </nav>
 
             <div class="flex-1 bg-[var(--bg-base)] rounded-lg flex flex-col overflow-hidden p-2 mt-2">
-                <div class="flex items-center justify-between text-[var(--text-subdued)] px-2 py-3 hover:text-white transition-colors cursor-pointer font-bold">
+                <div class="flex items-center justify-between text-[var(--text-subdued)] px-2 py-3 font-bold border-b border-[#282828]">
                     <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-book-open"></i>
-                        <span>Repositório GitHub</span>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Adicionadas Recentemente</span>
                     </div>
                 </div>
 
-                <div class="mt-4 px-2">
-                    <div class="bg-[var(--bg-elevated)] p-4 rounded-lg flex flex-col gap-3">
-                        <span class="font-bold text-white text-sm">Origem:</span>
-                        <span class="text-xs text-[var(--text-subdued)] break-words">github.com/gamesistem/DG-Music</span>
-                        <button onclick="loadFromGitHub()" class="bg-white text-black font-bold py-1.5 px-4 rounded-full text-sm w-fit hover:scale-105 transition-transform mt-2">
-                            Sincronizar
-                        </button>
-                    </div>
+                <!-- Lista de Músicas Recentes -->
+                <div id="recentTracksContainer" class="mt-2 flex-1 overflow-y-auto px-2 flex flex-col gap-1 pb-4">
+                    <div class="text-center text-xs text-[var(--text-subdued)] py-4">A carregar...</div>
                 </div>
             </div>
         </aside>
@@ -315,7 +310,7 @@
         </div>
     </footer>
 
-    <!-- Elemento de Áudio Oculto (Removido crossorigin para evitar bloqueios do GitHub e adicionado evento durationchange) -->
+    <!-- Elemento de Áudio Oculto -->
     <audio id="audioElement" ontimeupdate="updateProgress()" onloadedmetadata="setupAudio()" ondurationchange="setupAudio()" onended="nextTrack()"></audio>
 
     <script>
@@ -461,7 +456,46 @@
                 }
             }
 
-            filterTracks(); // Usa a função de filtro para renderizar a lista
+            filterTracks(); // Usa a função de filtro para renderizar a lista principal
+            renderRecentTracks(); // Renderiza o painel de recentes na lateral
+        }
+
+        // Função para mostrar as músicas "Adicionadas Recentemente" no menu lateral
+        function renderRecentTracks() {
+            const container = document.getElementById('recentTracksContainer');
+            container.innerHTML = '';
+            
+            if (tracks.length === 0) {
+                container.innerHTML = `<div class="text-center text-xs text-[var(--text-subdued)] py-4">Nenhuma música disponível.</div>`;
+                return;
+            }
+
+            // Exibe as últimas 5 músicas da lista para representar as mais recentes
+            const recentTracks = tracks.slice().reverse().slice(0, 5);
+
+            recentTracks.forEach(track => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 p-2 rounded-md hover:bg-[#282828] cursor-pointer transition-colors group';
+                item.onclick = () => playTrack(track.id);
+
+                const coverHTML = track.coverUrl 
+                    ? `<img src="${track.coverUrl}" class="w-10 h-10 object-cover rounded shadow-sm">`
+                    : `<div class="w-10 h-10 bg-[#282828] flex items-center justify-center rounded shadow-sm text-xs"><i class="fa-solid fa-music"></i></div>`;
+
+                item.innerHTML = `
+                    <div class="relative w-10 h-10 shrink-0">
+                        ${coverHTML}
+                        <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center rounded">
+                            <i class="fa-solid fa-play text-white text-xs ml-0.5"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col overflow-hidden w-full">
+                        <span class="text-sm text-white truncate font-medium group-hover:text-[var(--spotify-green)] transition-colors">${track.title}</span>
+                        <span class="text-xs text-[var(--text-subdued)] truncate">${track.artist}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
         }
 
         // Função de Busca/Filtro
