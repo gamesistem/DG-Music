@@ -116,6 +116,26 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Modificadores de botões ativos */
+        .btn-active {
+            color: var(--spotify-green) !important;
+        }
+        .repeat-one::after {
+            content: '1';
+            position: absolute;
+            font-size: 8px;
+            font-weight: bold;
+            top: -4px;
+            right: -4px;
+            background: var(--bg-base);
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col selection:bg-[#1db954] selection:text-white" onload="loadFromGitHub()">
@@ -125,8 +145,11 @@
         
         <!-- Barra Lateral Esquerda (Navegação) -->
         <aside class="w-64 bg-black flex flex-col p-4 gap-6 shrink-0 z-10">
-            <div class="flex items-center gap-2 text-white font-bold text-2xl px-2">
-                <div class="bg-[var(--spotify-green)] text-black w-8 h-8 rounded-lg flex items-center justify-center">
+            <div class="flex items-center gap-3 text-white font-bold text-2xl px-2">
+                <!-- Imagem da logo que será carregada do GitHub -->
+                <img id="appLogo" src="" alt="Dg / Music" class="w-8 h-8 rounded-lg object-cover hidden shadow-md">
+                <!-- Ícone padrão enquanto carrega -->
+                <div id="defaultLogo" class="bg-[var(--spotify-green)] text-black w-8 h-8 rounded-lg flex items-center justify-center shadow-md">
                     <i class="fa-solid fa-music text-lg"></i>
                 </div>
                 <span>Dg <span class="text-[var(--text-subdued)] font-light">/</span> Music</span>
@@ -137,7 +160,7 @@
                     <i class="fa-solid fa-house text-xl"></i>
                     Início
                 </a>
-                <a href="#" class="flex items-center gap-4 hover:text-white transition-colors px-2">
+                <a href="#" onclick="document.getElementById('searchInput').focus(); return false;" class="flex items-center gap-4 hover:text-white transition-colors px-2">
                     <i class="fa-solid fa-magnifying-glass text-xl"></i>
                     Buscar
                 </a>
@@ -167,13 +190,20 @@
         <main class="flex-1 bg-[var(--bg-base)] flex flex-col rounded-lg my-2 mr-2 overflow-hidden relative" style="background: linear-gradient(to bottom, #2a2a2a 0%, var(--bg-base) 300px);">
             <!-- Cabeçalho (Fixo) -->
             <header class="h-16 flex items-center px-6 justify-between shrink-0 sticky top-0 z-20" style="background-color: rgba(18, 18, 18, 0.7); backdrop-filter: blur(10px);">
-                <div class="flex gap-2">
-                    <button class="w-8 h-8 rounded-full bg-black/50 text-[var(--text-subdued)] flex items-center justify-center hover:text-white">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <button class="w-8 h-8 rounded-full bg-black/50 text-[var(--text-subdued)] flex items-center justify-center hover:text-white">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                <div class="flex gap-4 items-center w-full max-w-md">
+                    <div class="flex gap-2">
+                        <button class="w-8 h-8 rounded-full bg-black/50 text-[var(--text-subdued)] flex items-center justify-center hover:text-white">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button class="w-8 h-8 rounded-full bg-black/50 text-[var(--text-subdued)] flex items-center justify-center hover:text-white">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <!-- Nova Barra de Busca -->
+                    <div class="relative w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-subdued)]"></i>
+                        <input type="text" id="searchInput" oninput="filterTracks()" placeholder="O que pretende ouvir?" class="w-full bg-[#242424] text-white text-sm rounded-full py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-white border border-transparent hover:bg-[#2a2a2a] transition-colors">
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center">
@@ -242,7 +272,7 @@
                 <span id="playerTitle" class="text-sm text-white font-semibold truncate hover:underline cursor-pointer">Nenhuma música</span>
                 <span id="playerArtist" class="text-xs text-[var(--text-subdued)] truncate hover:underline cursor-pointer hover:text-white">---</span>
             </div>
-            <button class="text-[var(--text-subdued)] hover:text-white ml-2 text-sm">
+            <button id="likeBtn" onclick="toggleLike()" class="text-[var(--text-subdued)] hover:text-white ml-2 text-sm transition-colors">
                 <i class="fa-regular fa-heart"></i>
             </button>
         </div>
@@ -251,13 +281,13 @@
         <div class="flex flex-col items-center max-w-[40%] w-full gap-2">
             <!-- Botões -->
             <div class="flex items-center gap-6">
-                <button class="text-[var(--text-subdued)] hover:text-white transition-colors"><i class="fa-solid fa-shuffle"></i></button>
+                <button id="shuffleBtn" onclick="toggleShuffle()" class="text-[var(--text-subdued)] hover:text-white transition-colors relative"><i class="fa-solid fa-shuffle"></i></button>
                 <button onclick="prevTrack()" class="text-[var(--text-subdued)] hover:text-white transition-colors text-lg"><i class="fa-solid fa-backward-step"></i></button>
                 <button onclick="togglePlay()" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform">
                     <i id="playPauseIcon" class="fa-solid fa-play ml-1"></i>
                 </button>
                 <button onclick="nextTrack()" class="text-[var(--text-subdued)] hover:text-white transition-colors text-lg"><i class="fa-solid fa-forward-step"></i></button>
-                <button class="text-[var(--text-subdued)] hover:text-white transition-colors"><i class="fa-solid fa-repeat"></i></button>
+                <button id="repeatBtn" onclick="toggleRepeat()" class="text-[var(--text-subdued)] hover:text-white transition-colors relative"><i class="fa-solid fa-repeat"></i></button>
             </div>
             
             <!-- Barra de Progresso -->
@@ -279,14 +309,14 @@
                 <i class="fa-solid fa-list-ul"></i>
             </button>
             <div class="flex items-center gap-2 w-24 range-container">
-                <i class="fa-solid fa-volume-high text-sm"></i>
+                <i id="volumeIcon" onclick="toggleMute()" class="fa-solid fa-volume-high text-sm cursor-pointer hover:text-white transition-colors w-4 text-center"></i>
                 <input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1" oninput="setVolume(this.value)">
             </div>
         </div>
     </footer>
 
-    <!-- Elemento de Áudio Oculto -->
-    <audio id="audioElement" crossorigin="anonymous" ontimeupdate="updateProgress()" onloadedmetadata="setupAudio()" onended="nextTrack()"></audio>
+    <!-- Elemento de Áudio Oculto (Removido crossorigin para evitar bloqueios do GitHub e adicionado evento durationchange) -->
+    <audio id="audioElement" ontimeupdate="updateProgress()" onloadedmetadata="setupAudio()" ondurationchange="setupAudio()" onended="nextTrack()"></audio>
 
     <script>
         // URL base da API do GitHub para ler a raiz do repositório
@@ -295,6 +325,12 @@
         let tracks = [];
         let currentIndex = -1;
         let isPlaying = false;
+        
+        // Variáveis de estado para novas funções
+        let isShuffle = false;
+        let repeatMode = 0; // 0: Desligado, 1: Repetir Todas, 2: Repetir Uma
+        let isMuted = false;
+        let lastVolume = 1;
         
         const audio = document.getElementById('audioElement');
         const playPauseIcon = document.getElementById('playPauseIcon');
@@ -313,9 +349,17 @@
         const infoArtist = document.getElementById('infoArtist');
         const infoDescription = document.getElementById('infoDescription');
 
+        const appLogo = document.getElementById('appLogo');
+        const defaultLogo = document.getElementById('defaultLogo');
+        
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const volumeIcon = document.getElementById('volumeIcon');
+        const likeBtn = document.getElementById('likeBtn');
+
         // Formata segundos para MM:SS
         function formatTime(seconds) {
-            if (isNaN(seconds)) return "0:00";
+            if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -350,9 +394,17 @@
             }
         }
 
-        // Agrupa e formata as músicas vindas do GitHub
+        // Agrupa e formata as músicas vindas do GitHub e procura a logo
         function processGitHubFiles(files) {
             const fileGroups = {};
+            
+            // Procura a logo (logo.png ou logo.ico ou logo.jpg) na raiz do repositório
+            const logoFile = files.find(file => file.name.toLowerCase() === 'logo.png' || file.name.toLowerCase() === 'logo.jpg');
+            if (logoFile) {
+                appLogo.src = logoFile.download_url;
+                appLogo.classList.remove('hidden');
+                defaultLogo.classList.add('hidden');
+            }
             
             // Agrupar arquivos pelo nome base (ignorando a extensão)
             files.forEach(file => {
@@ -363,6 +415,9 @@
 
                 const ext = file.name.substring(lastDot + 1).toLowerCase();
                 const baseName = file.name.substring(0, lastDot);
+
+                // Ignora o ficheiro se for a logo em si, para não criar uma "música" vazia
+                if (baseName.toLowerCase() === 'logo') return;
 
                 if (!fileGroups[baseName]) {
                     fileGroups[baseName] = {};
@@ -406,26 +461,35 @@
                 }
             }
 
-            renderTrackList();
+            filterTracks(); // Usa a função de filtro para renderizar a lista
+        }
+
+        // Função de Busca/Filtro
+        function filterTracks() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = tracks.filter(t => t.title.toLowerCase().includes(query) || t.artist.toLowerCase().includes(query));
+            renderTrackList(filtered);
         }
 
         // Exibe as músicas na tabela central
-        function renderTrackList() {
+        function renderTrackList(tracksToRender = tracks) {
             trackListContainer.innerHTML = '';
 
-            if (tracks.length === 0) {
+            if (tracksToRender.length === 0) {
+                const query = document.getElementById('searchInput').value;
                 trackListContainer.innerHTML = `
                     <div class="text-center text-[var(--text-subdued)] py-10">
-                        <i class="fa-brands fa-github text-4xl mb-4 opacity-50"></i>
-                        <p>Nenhuma música .mp3 encontrada no repositório.</p>
+                        <i class="fa-solid fa-magnifying-glass text-4xl mb-4 opacity-50"></i>
+                        <p>${query ? 'Nenhuma música encontrada para "' + query + '".' : 'Nenhuma música .mp3 encontrada no repositório.'}</p>
                     </div>`;
                 return;
             }
 
-            tracks.forEach((track, index) => {
+            tracksToRender.forEach((track) => {
+                const isCurrent = currentIndex === track.id;
                 const row = document.createElement('div');
-                row.className = `track-row grid grid-cols-[50px_minmax(200px,1fr)_150px] gap-4 px-4 py-2 text-sm rounded-md items-center text-[var(--text-subdued)] cursor-pointer transition-colors ${currentIndex === index ? 'active-track' : ''}`;
-                row.onclick = () => playTrack(index);
+                row.className = `track-row grid grid-cols-[50px_minmax(200px,1fr)_150px] gap-4 px-4 py-2 text-sm rounded-md items-center text-[var(--text-subdued)] cursor-pointer transition-colors ${isCurrent ? 'active-track' : ''}`;
+                row.onclick = () => playTrack(track.id);
 
                 // Capa ou Ícone padrão da listagem
                 const coverHTML = track.coverUrl 
@@ -434,13 +498,13 @@
 
                 row.innerHTML = `
                     <div class="text-center w-full flex items-center justify-center relative h-10">
-                        <span class="track-num ${currentIndex === index ? 'hidden' : ''}">${index + 1}</span>
-                        <i class="fa-solid fa-play track-play-icon absolute ${currentIndex === index ? '!block text-[var(--spotify-green)]' : ''}"></i>
+                        <span class="track-num ${isCurrent ? 'hidden' : ''}">${track.id + 1}</span>
+                        <i class="fa-solid fa-play track-play-icon absolute ${isCurrent ? '!block text-[var(--spotify-green)]' : ''}"></i>
                     </div>
                     <div class="flex items-center gap-3 overflow-hidden">
                         ${coverHTML}
                         <div class="flex flex-col truncate">
-                            <span class="font-normal text-white truncate ${currentIndex === index ? 'text-[var(--spotify-green)]' : ''}">${track.title}</span>
+                            <span class="font-normal text-white truncate ${isCurrent ? 'text-[var(--spotify-green)]' : ''}">${track.title}</span>
                             <span class="text-xs truncate">${track.artist}</span>
                         </div>
                     </div>
@@ -452,21 +516,29 @@
             });
         }
 
-        // Lógica de Tocar Música
+        // Lógica de Tocar Música (Otimizada para carregamento em tempo real do GitHub)
         function playTrack(index) {
             if (index < 0 || index >= tracks.length) return;
             
             const track = tracks[index];
             currentIndex = index;
 
-            // Carrega a fonte RAW do GitHub e dá play
+            // Mostra o loading no botão enquanto carrega
+            playPauseIcon.className = 'fa-solid fa-spinner fa-spin ml-0';
+
+            // Carrega a fonte RAW do GitHub
             audio.src = track.audioUrl;
+            
             audio.play().then(() => {
                 isPlaying = true;
                 updateUIPlayState();
                 updateNowPlayingUI(track);
-                renderTrackList(); // Atualiza a cor ativa na lista
-            }).catch(e => console.error("Erro ao tocar áudio do GitHub:", e));
+                filterTracks(); // Atualiza a cor ativa na lista mantendo o filtro atual
+            }).catch(e => {
+                console.error("Erro ao tocar áudio do GitHub:", e);
+                playPauseIcon.className = 'fa-solid fa-play ml-1';
+                isPlaying = false;
+            });
         }
 
         // Toca ou Pausa
@@ -478,17 +550,21 @@
             }
 
             if (audio.paused) {
-                audio.play();
-                isPlaying = true;
+                playPauseIcon.className = 'fa-solid fa-spinner fa-spin ml-0';
+                audio.play().then(() => {
+                    isPlaying = true;
+                    updateUIPlayState();
+                }).catch(e => console.error(e));
             } else {
                 audio.pause();
                 isPlaying = false;
+                updateUIPlayState();
             }
-            updateUIPlayState();
         }
 
         function prevTrack() {
             if (tracks.length === 0) return;
+            // Se já passou de 3 segundos, volta ao início da música atual
             if (audio.currentTime > 3) {
                 audio.currentTime = 0;
             } else {
@@ -500,8 +576,42 @@
 
         function nextTrack() {
             if (tracks.length === 0) return;
-            let newIndex = currentIndex + 1;
-            if (newIndex >= tracks.length) newIndex = 0;
+            
+            // Se estiver no modo "Repetir Uma"
+            if (repeatMode === 2) {
+                audio.currentTime = 0;
+                audio.play();
+                return;
+            }
+
+            let newIndex;
+            
+            if (isShuffle) {
+                // Modo Aleatório
+                if (tracks.length === 1) {
+                    newIndex = 0;
+                } else {
+                    do {
+                        newIndex = Math.floor(Math.random() * tracks.length);
+                    } while (newIndex === currentIndex);
+                }
+            } else {
+                // Modo Normal
+                newIndex = currentIndex + 1;
+                if (newIndex >= tracks.length) {
+                    if (repeatMode === 1) {
+                        newIndex = 0; // Repetir Todas: volta para a primeira
+                    } else {
+                        // Desligado: para a reprodução no fim da lista
+                        audio.pause();
+                        isPlaying = false;
+                        updateUIPlayState();
+                        audio.currentTime = 0;
+                        updateProgress();
+                        return;
+                    }
+                }
+            }
             playTrack(newIndex);
         }
 
@@ -561,10 +671,12 @@
             }
         }
 
-        // Configuração ao carregar metadados do áudio
+        // Configuração ao carregar metadados do áudio (preparado para streaming contínuo)
         function setupAudio() {
-            progressBar.max = audio.duration;
-            document.getElementById('durationDisplay').textContent = formatTime(audio.duration);
+            if (isFinite(audio.duration)) {
+                progressBar.max = audio.duration;
+                document.getElementById('durationDisplay').textContent = formatTime(audio.duration);
+            }
         }
 
         // Atualiza barra de progresso durante reprodução
@@ -573,7 +685,8 @@
             document.getElementById('currentTimeDisplay').textContent = formatTime(audio.currentTime);
             
             // Pinta o background da track do input range (Efeito visual)
-            const percent = (audio.currentTime / audio.duration) * 100;
+            const duration = isFinite(audio.duration) ? audio.duration : 1;
+            const percent = duration > 0 ? (audio.currentTime / duration) * 100 : 0;
             progressBar.style.background = `linear-gradient(to right, #fff ${percent}%, #4d4d4d ${percent}%)`;
         }
 
@@ -586,8 +699,67 @@
         // Volume
         function setVolume(value) {
             audio.volume = value;
+            isMuted = (value == 0);
+            updateVolumeUI(value);
+        }
+
+        // Atualiza interface do volume e ícone
+        function updateVolumeUI(value) {
             const percent = value * 100;
             volumeBar.style.background = `linear-gradient(to right, #fff ${percent}%, #4d4d4d ${percent}%)`;
+            
+            if (value == 0) {
+                volumeIcon.className = 'fa-solid fa-volume-xmark text-sm cursor-pointer hover:text-white transition-colors w-4 text-center';
+            } else if (value < 0.5) {
+                volumeIcon.className = 'fa-solid fa-volume-low text-sm cursor-pointer hover:text-white transition-colors w-4 text-center';
+            } else {
+                volumeIcon.className = 'fa-solid fa-volume-high text-sm cursor-pointer hover:text-white transition-colors w-4 text-center';
+            }
+        }
+
+        function toggleMute() {
+            if (isMuted) {
+                audio.volume = lastVolume > 0 ? lastVolume : 1; // Restaura ou define para 100% se estava a zeros
+                volumeBar.value = audio.volume;
+                isMuted = false;
+                updateVolumeUI(audio.volume);
+            } else {
+                lastVolume = audio.volume; // Guarda o volume atual
+                audio.volume = 0;
+                volumeBar.value = 0;
+                isMuted = true;
+                updateVolumeUI(0);
+            }
+        }
+
+        function toggleShuffle() {
+            isShuffle = !isShuffle;
+            shuffleBtn.classList.toggle('btn-active', isShuffle);
+        }
+
+        function toggleRepeat() {
+            repeatMode = (repeatMode + 1) % 3; // Alterna 0 -> 1 -> 2 -> 0
+            
+            if (repeatMode === 0) {
+                // Desligado
+                repeatBtn.classList.remove('btn-active', 'repeat-one');
+            } else if (repeatMode === 1) {
+                // Repetir Todas
+                repeatBtn.classList.add('btn-active');
+                repeatBtn.classList.remove('repeat-one');
+            } else if (repeatMode === 2) {
+                // Repetir Uma (Adiciona o selo '1' via CSS)
+                repeatBtn.classList.add('btn-active', 'repeat-one');
+            }
+        }
+
+        function toggleLike() {
+            const icon = likeBtn.querySelector('i');
+            if (icon.classList.contains('fa-regular')) {
+                icon.className = 'fa-solid fa-heart text-[var(--spotify-green)] transition-colors';
+            } else {
+                icon.className = 'fa-regular fa-heart transition-colors';
+            }
         }
 
         // Painel Lateral (TXT Info)
